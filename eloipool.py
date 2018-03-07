@@ -462,7 +462,7 @@ def checkData(share, wld):
 		raise RejectedShare('bad-diffbits')
 	
 	MT = wld[1]
-	if data[0:4] != MT.MP['_BlockVersionBytes']:
+	if struct.unpack('<L', data[0:4])[0] & ~MT.MP['versionmask'] != MT.MP['_BlockVersionCmp']:
 		raise RejectedShare('bad-version')
 
 def buildStratumData(share, merkleroot):
@@ -543,7 +543,7 @@ def checkShare(share):
 	if 'jobid' in share:
 		if share.get('blockversion') is None:
 			share['blockversion'] = workMerkleTree.MP['_BlockVersionBytes']
-		elif share['blockversion'] != workMerkleTree.MP['_BlockVersionBytes']:
+		elif struct.unpack('!L', share['blockversion'])[0] & ~workMerkleTree.MP['versionmask'] != workMerkleTree.MP['_BlockVersionCmp']:
 			raise RejectedShare('bad-version')
 		cbtxn = deepcopy(workMerkleTree.data[0])
 		coinbase = workCoinbase + share['extranonce1'] + share['extranonce2']
