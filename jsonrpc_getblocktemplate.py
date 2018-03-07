@@ -99,6 +99,8 @@ class _getblocktemplate:
 		rv['vbavailable'] = merkleTree.MP['_filtered_vbavailable']
 		rv['vbrequired'] = rv['version'] & 0x1fffffff
 		
+		rv['versionmask'] = merkleTree.MP['versionmask']
+		
 		return rv
 	
 	def doJSON_submitblock(self, data, params = _NoParams):
