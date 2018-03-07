@@ -167,6 +167,18 @@ class StratumHandler(networkserver.SocketHandler):
 	def _stratumreply_7(self, rpc):
 		self.UA = rpc.get('result') or rpc
 	
+	def _stratum_mining_capabilities(self, capabilities):
+		rv = {}
+		for (extname, params) in capabilities.items():
+			funcname = '_stratumext_%s' % (extname.replace('-', '_'),)
+			if not hasattr(self, funcname):
+				continue
+			res = getattr(self, funcname)(params)
+			if res is None:
+				continue
+			rv[extname] = res
+		return rv
+	
 	def _stratum_mining_subscribe(self, UA = None, xid = None):
 		if not UA is None:
 			self.UA = UA
