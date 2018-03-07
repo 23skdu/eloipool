@@ -54,6 +54,7 @@ class StratumHandler(networkserver.SocketHandler):
 		self.set_terminator(b"\n")
 		self.Usernames = {}
 		self.lastBDiff = None
+		self.lastVersionMask = None
 		self.JobTargets = collections.OrderedDict()
 		self.UA = None
 		self.LicenseSent = agplcompliance._SourceFiles is None
@@ -152,6 +153,16 @@ class StratumHandler(networkserver.SocketHandler):
 				],
 			})
 			self.lastBDiff = bdiff
+		vmask = self.server.JobVersionMask
+		if (not self.lastVersionMask is None) and self.lastVersionMask != vmask:
+			self.sendReply({
+				'id': None,
+				'method': 'mining.set_version_mask',
+				'params': [
+					struct.unpack('<L', vmask),
+				],
+			})
+			self.lastVersionMask = vmask
 		self.push(self.server.JobBytes)
 		if len(self.JobTargets) > 4:
 			self.JobTargets.popitem(False)
@@ -207,7 +218,14 @@ class StratumHandler(networkserver.SocketHandler):
 	
 	def _stratumext_version_rolling(self, params):
 		if params.get('_configure'):
-			return {'mask': '00000000'}
+			if self.lastVersionMask is None:
+				self.lastVersionMask = vmask
+			vmask = self.lastVersionMask
+			
+			return {'mask': struct.unpack('<L', vmask)}
+		
+		if self.lastVersionMask is None:
+			self.lastVersionMask = 0
 	
 	def _stratum_mining_subscribe(self, UA = None, xid = None):
 		if not UA is None:
@@ -342,6 +360,7 @@ class StratumServer(networkserver.AsyncSocketServer):
 		
 		steps = list(b2a_hex(h).decode('ascii') for h in merkleTree._steps)
 		
+		self.JobVersionMask = merkleTree['versionmask']
 		self.JobBytes = json.dumps({
 			'id': None,
 			'method': 'mining.notify',
