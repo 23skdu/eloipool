@@ -197,7 +197,7 @@ class merkleMaker(threading.Thread):
 	
 	def UpdateClearMerkleTree(self, MT, MP):
 		nMP = {}
-		for copy_mp in ('version', '_BlockVersionBytes', 'rules', '_filtered_vbavailable'):
+		for copy_mp in ('version', '_BlockVersionBytes', 'versionmask', '_BlockVersionCmp', 'rules', '_filtered_vbavailable'):
 			nMP[copy_mp] = MP[copy_mp]
 		MT.MP = nMP
 	
@@ -434,6 +434,8 @@ class merkleMaker(threading.Thread):
 		bits = bytes.fromhex(MP['bits'])[::-1]
 		(MP['_bits'], MP['_prevBlock']) = (bits, prevBlock)
 		MP['_BlockVersionBytes'] = struct.pack('<L', MP['version'])
+		MP.setdefault('versionmask', 0)
+		MP['_BlockVersionCmp'] = MP['version'] & ~MP['versionmask']
 		if (prevBlock, height, bits) != self.currentBlock and (self.currentBlock[1] is None or height > self.currentBlock[1]):
 			self.updateBlock(prevBlock, height, bits, _HBH=(MP['previousblockhash'], MP['bits']))
 		
