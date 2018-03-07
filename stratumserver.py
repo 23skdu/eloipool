@@ -205,6 +205,10 @@ class StratumHandler(networkserver.SocketHandler):
 				rv[extname] = res
 		return rv
 	
+	def _stratumext_version_rolling(self, params):
+		if params.get('_configure'):
+			return {'mask': '00000000'}
+	
 	def _stratum_mining_subscribe(self, UA = None, xid = None):
 		if not UA is None:
 			self.UA = UA
@@ -237,13 +241,16 @@ class StratumHandler(networkserver.SocketHandler):
 			pass
 		super().close()
 	
-	def _stratum_mining_submit(self, username, jobid, extranonce2, ntime, nonce):
+	def _stratum_mining_submit(self, username, jobid, extranonce2, ntime, nonce, version=None):
 		if username not in self.Usernames:
 			raise StratumError(24, 'unauthorized-user', False)
+		if version:
+			version = bytes.fromhex(version)
 		share = {
 			'username': username,
 			'remoteHost': self.remoteHost,
 			'jobid': jobid,
+			'blockversion': version,
 			'extranonce1': self.extranonce1,
 			'extranonce2': bytes.fromhex(extranonce2)[:extranonce2sz],
 			'ntime': bytes.fromhex(ntime),
