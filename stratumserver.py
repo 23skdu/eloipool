@@ -179,6 +179,32 @@ class StratumHandler(networkserver.SocketHandler):
 			rv[extname] = res
 		return rv
 	
+	def _stratum_mining_configure(self, extensions, extension_params):
+		capabilities = dict((extname, {}) for extname in extensions)
+		for (param, value) in extension_params:
+			param = param.split('.', 1)
+			if param[0] not in capabilities:
+				continue
+			capabilities[param[0]][param[1]] = value
+		return self._stratum_mining_capabilities(capabilities)
+		rv = {}
+		for (extname, params) in capabilities.items():
+			funcname = '_stratumext_%s' % (extname.replace('-', '_'),)
+			if not hasattr(self, funcname):
+				rv[extname] = False
+				continue
+			params['_configure'] = True
+			res = getattr(self, funcname)(params)
+			if isinstance(res, dict):
+				rv[extname] = True
+				for (k, v) in res.items():
+					rv[extname + '.' + k] = v
+			else:
+				if res is None:
+					res = False
+				rv[extname] = res
+		return rv
+	
 	def _stratum_mining_subscribe(self, UA = None, xid = None):
 		if not UA is None:
 			self.UA = UA
